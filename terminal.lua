@@ -52,7 +52,7 @@ local function terminal_move_to(terminal, x, y)
 end
 
 local function terminal_reverse(terminal, set)
-    table.insert(terminal.stdin, {type="reverse", value=set ~= nil and set or not terminal.cursor_reversed})
+    table.insert(terminal.stdin, {type="reverse", value=set})
 end
 
 local function terminal_clear(terminal, x, y, w, h)
@@ -138,7 +138,7 @@ local function terminal_update(terminal, dt)
             terminal.cursor_x = char_or_command.x
             terminal.cursor_y = char_or_command.y
         elseif char_or_command.type == "reverse" then
-            terminal.cursor_reversed = char_or_command.value
+            terminal.cursor_reversed = (char_or_command.value ~= nil) and char_or_command.value or not terminal.cursor_reversed
         elseif char_or_command.type == "save" then
             terminal.saved_cursor_x = terminal.cursor_x
             terminal.saved_cursor_y = terminal.cursor_y
