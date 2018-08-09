@@ -4,6 +4,17 @@
 
 local utf8 = require("utf8")
 
+local basic_scheme = {
+    [0] = {0,0,0,1},
+    {1,0,0,1},
+    {0,1,0,1},
+    {1,1,0,1},
+    {0,0,1,1},
+    {1,0,1,1},
+    {0,1,1,1},
+    {1,1,1,1}
+}
+
 -- TODO : properly quote the creator of this snippet
 local function utf8_sub(s,i,j)
     i=utf8.offset(s,i)
@@ -18,6 +29,15 @@ end
 local function terminal_show_cursor(terminal)
     table.insert(terminal.stdin, {type="show_cursor"})
 end
+
+local function terminal_set_cursor_color(terminal, red, blue, green, alpha)
+    -- Argument processing
+    if type(red) == "table" and blue == nil then
+        red, blue, green, alpha = red[1], red[2], red[3], red[4]
+    end
+    table.insert(terminal.stdin, {type="cursor_color", red=red, blue=blue, green=green, alpha=(alpha or 1)})
+end
+
 
 local function terminal_move_to(terminal, x, y)
     table.insert(terminal.stdin, {type="move", x=math.floor(x), y=math.floor(y)})
@@ -77,6 +97,7 @@ local function terminal_update(terminal, dt)
                 wrap_if_bottom(terminal)
             else
                 terminal.buffer[terminal.cursor_y][terminal.cursor_x] = char_or_command
+                terminal.state_buffer[terminal.cursor_y][terminal.cursor_x].color = {unpack(terminal.cursor_color)}
                 terminal.cursor_x = terminal.cursor_x + 1
                 if terminal.cursor_x > terminal.width then
                     terminal.cursor_x = 1
@@ -97,6 +118,11 @@ local function terminal_update(terminal, dt)
             terminal.show_cursor = false
         elseif char_or_command.type == "show_cursor" then
             terminal.show_cursor = true
+        elseif char_or_command.type == "cursor_color" then
+            terminal.cursor_color[1] =  char_or_command.red
+            terminal.cursor_color[2] = char_or_command.blue
+            terminal.cursor_color[3] = char_or_command.green
+            terminal.cursor_color[4] = char_or_command.alpha
         elseif char_or_command.type == "move" then
             terminal.cursor_x = char_or_command.x
             terminal.cursor_y = char_or_command.y
@@ -119,18 +145,37 @@ local function terminal_update(terminal, dt)
             end
 
             local buffer = terminal.buffer
+            local state_buffer = terminal.state_buffer
+            local char_color = terminal.cursor_color
             local x,y,width,height = char_or_command.x, char_or_command.y, char_or_command.w, char_or_command.h
+            -- TODO : move this into a function?
+            -- TODO : turn a*b+c formulas into something explicit.
+
             buffer[y][x] = utf8_sub(style,1, 1)
+            state_buffer[y][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+            
             buffer[y][x+width-1] = utf8_sub(style,2, 2)
+            state_buffer[y][x+width-1].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+
             buffer[y+height-1][x] = utf8_sub(style,3, 3)
+            state_buffer[y+height-1][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+
             buffer[y+height-1][x+width-1] = utf8_sub(style,4, 4)
+            state_buffer[y+height-1][x+width-1].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+
             for i=x+1, x+width-2 do
                 buffer[y][i] = utf8_sub(style,5, 5)
+                state_buffer[y][i].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+
                 buffer[y+height-1][i] = utf8_sub(style,5, 5)
+                state_buffer[y+height-1][i].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
             end
             for i=y+1, y+height-2 do
                 buffer[i][x] = utf8_sub(style,6, 6)
+                state_buffer[i][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+
                 buffer[i][x+width-1] = utf8_sub(style,6, 6)
+                state_buffer[i][x+width-1].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
             end
             terminal.dirty = true
         else
@@ -148,6 +193,7 @@ end
 local function terminal_draw(terminal)
     local char_width, char_height = terminal.char_width, terminal.char_height
     if terminal.dirty then
+        local previous_color = {love.graphics.getColor()}
         local previous_canvas = love.graphics.getCanvas()
 
         love.graphics.push()
@@ -158,6 +204,7 @@ local function terminal_draw(terminal)
         love.graphics.setFont(terminal.font)
         for y,row in ipairs(terminal.buffer) do
             for x,char in ipairs(row) do
+                love.graphics.setColor((terminal.state_buffer[y][x].color))
                 love.graphics.print(char, (x-1)*char_width, (y-1)*char_height)
             end
         end
@@ -165,6 +212,7 @@ local function terminal_draw(terminal)
         love.graphics.pop()
 
         love.graphics.setCanvas(previous_canvas)
+        love.graphics.setColor(unpack(previous_color))
     end
 
     love.graphics.draw(terminal.canvas)
@@ -202,7 +250,8 @@ local function terminal_load_position(terminal)
     table.insert(terminal.stdin, {type="load"})
 end
 
-local function terminal (width, height, font, custom_char_width, custom_char_height)
+
+local function terminal (self, width, height, font, custom_char_width, custom_char_height)
     local char_width = custom_char_width or font:getWidth('█')
     local char_height = custom_char_height or font:getHeight()
     local num_columns = math.floor(width/char_width)
@@ -217,6 +266,7 @@ local function terminal (width, height, font, custom_char_width, custom_char_hei
         cursor_y = 1,
         saved_cursor_x = 1,
         saved_cursor_y = 1,
+        cursor_color = {1,1,1,1},
 
         dirty = false,
         char_width = char_width,
@@ -230,15 +280,21 @@ local function terminal (width, height, font, custom_char_width, custom_char_hei
         clear_color = {0,0,0},
 
         canvas = love.graphics.newCanvas(width, height),
-        buffer = {}
+        buffer = {},
+        state_buffer = {}
     }
 
     for i=1,num_rows do
         local row = {}
+        local state_row = {}
         for j=1,num_columns do
             row[j] = ' '
+            state_row[j] = {
+                color = {1,1,1,1}
+            }
         end
         instance.buffer[i] = row
+        instance.state_buffer[i] = state_row
     end
 
     instance.update = terminal_update
@@ -250,10 +306,19 @@ local function terminal (width, height, font, custom_char_width, custom_char_hei
     instance.move_to = terminal_move_to
     instance.hide_cursor = terminal_hide_cursor
     instance.show_cursor = terminal_show_cursor
+    instance.set_cursor_color = terminal_set_cursor_color
 
     instance.frame = terminal_frame
 
     return instance
 end
 
-return terminal
+local module = {
+    terminal = terminal,
+    schemes = {
+        basic = basic_scheme
+    }
+}
+setmetatable(module, {__call = module.terminal})
+
+return module
