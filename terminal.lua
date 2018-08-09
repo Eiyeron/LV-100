@@ -154,7 +154,7 @@ local function terminal_draw(terminal)
         love.graphics.origin()
 
         love.graphics.setCanvas(terminal.canvas)
-        love.graphics.clear(0,0,0)
+        love.graphics.clear(unpack(terminal.clear_color))
         love.graphics.setFont(terminal.font)
         for y,row in ipairs(terminal.buffer) do
             for x,char in ipairs(row) do
@@ -226,6 +226,8 @@ local function terminal (width, height, font, custom_char_width, custom_char_hei
         char_cost = 1,
         accumulator = 0,
         stdin = {},
+
+        clear_color = {0,0,0},
 
         canvas = love.graphics.newCanvas(width, height),
         buffer = {}
