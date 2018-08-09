@@ -4,6 +4,7 @@
 
 local utf8 = require("utf8")
 
+-- The good old 3-bit color scheme.
 local basic_scheme = {
     [0] = {0,0,0,1},
     {1,0,0,1},
@@ -20,6 +21,13 @@ local function utf8_sub(s,i,j)
     i=utf8.offset(s,i)
     j=utf8.offset(s,j+1)-1
     return string.sub(s,i,j)
+end
+
+local function terminal_update_character(terminal, x, y, new_char)
+    terminal.buffer[y][x] = new_char
+    local char_color = terminal.cursor_color
+    terminal.state_buffer[y][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+    terminal.state_buffer[y][x].reversed = terminal.cursor_reversed
 end
 
 local function terminal_hide_cursor(terminal)
@@ -41,6 +49,10 @@ end
 
 local function terminal_move_to(terminal, x, y)
     table.insert(terminal.stdin, {type="move", x=math.floor(x), y=math.floor(y)})
+end
+
+local function terminal_reverse(terminal, set)
+    table.insert(terminal.stdin, {type="reverse", value=set ~= nil and set or not terminal.cursor_reversed})
 end
 
 local function terminal_clear(terminal, x, y, w, h)
@@ -96,8 +108,7 @@ local function terminal_update(terminal, dt)
                 terminal.cursor_y = terminal.cursor_y + 1
                 wrap_if_bottom(terminal)
             else
-                terminal.buffer[terminal.cursor_y][terminal.cursor_x] = char_or_command
-                terminal.state_buffer[terminal.cursor_y][terminal.cursor_x].color = {unpack(terminal.cursor_color)}
+                terminal_update_character(terminal, terminal.cursor_x, terminal.cursor_y, char_or_command)
                 terminal.cursor_x = terminal.cursor_x + 1
                 if terminal.cursor_x > terminal.width then
                     terminal.cursor_x = 1
@@ -126,6 +137,8 @@ local function terminal_update(terminal, dt)
         elseif char_or_command.type == "move" then
             terminal.cursor_x = char_or_command.x
             terminal.cursor_y = char_or_command.y
+        elseif char_or_command.type == "reverse" then
+            terminal.cursor_reversed = char_or_command.value
         elseif char_or_command.type == "save" then
             terminal.saved_cursor_x = terminal.cursor_x
             terminal.saved_cursor_y = terminal.cursor_y
@@ -148,34 +161,23 @@ local function terminal_update(terminal, dt)
             local state_buffer = terminal.state_buffer
             local char_color = terminal.cursor_color
             local x,y,width,height = char_or_command.x, char_or_command.y, char_or_command.w, char_or_command.h
-            -- TODO : move this into a function?
-            -- TODO : turn a*b+c formulas into something explicit.
 
-            buffer[y][x] = utf8_sub(style,1, 1)
-            state_buffer[y][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
-            
-            buffer[y][x+width-1] = utf8_sub(style,2, 2)
-            state_buffer[y][x+width-1].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+            local left, right = x, x+width - 1
+            local top, bottom = y, y+height - 1
+            terminal_update_character(terminal, left, top, utf8_sub(style,1,1))
+            terminal_update_character(terminal, right, top, utf8_sub(style,2,2))
+            terminal_update_character(terminal, left, bottom, utf8_sub(style,3,3))
+            terminal_update_character(terminal, right, bottom, utf8_sub(style,4,4))
 
-            buffer[y+height-1][x] = utf8_sub(style,3, 3)
-            state_buffer[y+height-1][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
-
-            buffer[y+height-1][x+width-1] = utf8_sub(style,4, 4)
-            state_buffer[y+height-1][x+width-1].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
-
-            for i=x+1, x+width-2 do
-                buffer[y][i] = utf8_sub(style,5, 5)
-                state_buffer[y][i].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
-
-                buffer[y+height-1][i] = utf8_sub(style,5, 5)
-                state_buffer[y+height-1][i].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+            local horizontal_char = utf8_sub(style, 5, 5)
+            local vertical_char = utf8_sub(style, 6, 6)
+            for i=left+1, right-1 do
+                terminal_update_character(terminal, i, top, horizontal_char)
+                terminal_update_character(terminal, i, bottom, horizontal_char)
             end
-            for i=y+1, y+height-2 do
-                buffer[i][x] = utf8_sub(style,6, 6)
-                state_buffer[i][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
-
-                buffer[i][x+width-1] = utf8_sub(style,6, 6)
-                state_buffer[i][x+width-1].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+            for i=top+1, bottom-1 do
+                terminal_update_character(terminal, left, i, vertical_char)
+                terminal_update_character(terminal, right, i, vertical_char)
             end
             terminal.dirty = true
         else
@@ -193,6 +195,7 @@ end
 local function terminal_draw(terminal)
     local char_width, char_height = terminal.char_width, terminal.char_height
     if terminal.dirty then
+        print("dirty")
         local previous_color = {love.graphics.getColor()}
         local previous_canvas = love.graphics.getCanvas()
 
@@ -204,8 +207,16 @@ local function terminal_draw(terminal)
         love.graphics.setFont(terminal.font)
         for y,row in ipairs(terminal.buffer) do
             for x,char in ipairs(row) do
-                love.graphics.setColor((terminal.state_buffer[y][x].color))
-                love.graphics.print(char, (x-1)*char_width, (y-1)*char_height)
+                local state = terminal.state_buffer[y][x]
+                local left, top = (x-1)*char_width, (y-1)*char_height
+                if state.reversed then 
+                    love.graphics.setColor(unpack(state.color))
+                    love.graphics.rectangle("fill", left, top, terminal.char_width, terminal.char_height)
+                    love.graphics.setColor(unpack(terminal.clear_color))
+                else
+                    love.graphics.setColor(unpack(state.color))
+                end
+                love.graphics.print(char, left, top)
             end
         end
         terminal.dirty = false
@@ -267,6 +278,7 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
         saved_cursor_x = 1,
         saved_cursor_y = 1,
         cursor_color = {1,1,1,1},
+        cursor_reversed = false,
 
         dirty = false,
         char_width = char_width,
@@ -306,6 +318,7 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
     instance.move_to = terminal_move_to
     instance.hide_cursor = terminal_hide_cursor
     instance.show_cursor = terminal_show_cursor
+    instance.reverse_cursor = terminal_reverse
     instance.set_cursor_color = terminal_set_cursor_color
 
     instance.frame = terminal_frame
