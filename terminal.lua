@@ -195,7 +195,6 @@ end
 local function terminal_draw(terminal)
     local char_width, char_height = terminal.char_width, terminal.char_height
     if terminal.dirty then
-        print("dirty")
         local previous_color = {love.graphics.getColor()}
         local previous_canvas = love.graphics.getCanvas()
 
@@ -205,13 +204,15 @@ local function terminal_draw(terminal)
         love.graphics.setCanvas(terminal.canvas)
         love.graphics.clear(unpack(terminal.clear_color))
         love.graphics.setFont(terminal.font)
+        local font_height = terminal.font:getHeight()
         for y,row in ipairs(terminal.buffer) do
             for x,char in ipairs(row) do
                 local state = terminal.state_buffer[y][x]
                 local left, top = (x-1)*char_width, (y-1)*char_height
                 if state.reversed then 
                     love.graphics.setColor(unpack(state.color))
-                    love.graphics.rectangle("fill", left, top, terminal.char_width, terminal.char_height)
+                    -- TODO : find out why I need to offset the rectangle on x14y24 when reducing the font height.
+                    love.graphics.rectangle("fill", left, top + (font_height - char_height), terminal.char_width, terminal.char_height)
                     love.graphics.setColor(unpack(terminal.clear_color))
                 else
                     love.graphics.setColor(unpack(state.color))
@@ -251,6 +252,14 @@ local function terminal_print(terminal, x, y, ...)
         table.insert(terminal.stdin, utf8.char(p))
     end
 end
+
+local function terminal_blit(terminal, x, y, str)
+    for line in str:gmatch("[^\r\n]+") do
+        terminal_print(terminal, x, y, "%s", line)
+        y = y + 1
+    end
+end
+
 
 local function terminal_save_position(terminal)
     table.insert(terminal.stdin, {type="save"})
@@ -312,6 +321,7 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
     instance.update = terminal_update
     instance.draw = terminal_draw
     instance.print = terminal_print
+    instance.blit = terminal_blit
     instance.clear = terminal_clear
     instance.save_position = terminal_save_position
     instance.load_position = terminal_load_position
