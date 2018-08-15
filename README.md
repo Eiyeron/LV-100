@@ -44,13 +44,15 @@ term:print(4, 16, "☛ Helpers")
 term:print(4, 16, "☛ Settings (speed, dimensions, font, ...)")
 
 term:print(4, 17, "☛ ")
-local text_line = "Per character-colors !"
+local text_line = "2 colors per character !"
 for i=1,#text_line do
-    term:set_cursor_color(Terminal.schemes.basic[i%7 +1])
+    term:set_cursor_color(Terminal.schemes.basic[i%8])
+    term:set_cursor_backcolor(Terminal.schemes.basic[(i+6)%8])
     term:print(text_line:sub(i, i))
 end
 
 term:set_cursor_color(Terminal.schemes.basic[6])
+term:set_cursor_backcolor(Terminal.schemes.basic[0])
 term:reverse_cursor(true)
 term:print(4, 18, "☛ Reversed color mode")
 

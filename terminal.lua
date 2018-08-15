@@ -1,6 +1,7 @@
 -- LV-100
 
 -- TODO : add licence
+-- TODO : rethink character coloring to simplify stuff
 
 local utf8 = require("utf8")
 
@@ -26,8 +27,11 @@ end
 local function terminal_update_character(terminal, x, y, new_char)
     terminal.buffer[y][x] = new_char
     local char_color = terminal.cursor_color
+    local char_backcolor = terminal.cursor_backcolor
     terminal.state_buffer[y][x].color = {char_color[1], char_color[2], char_color[3], char_color[4]}
+    terminal.state_buffer[y][x].backcolor = {char_backcolor[1], char_backcolor[2], char_backcolor[3], char_backcolor[4]}
     terminal.state_buffer[y][x].reversed = terminal.cursor_reversed
+    terminal.state_buffer[y][x].dirty = true
 end
 
 local function terminal_hide_cursor(terminal)
@@ -44,6 +48,14 @@ local function terminal_set_cursor_color(terminal, red, blue, green, alpha)
         red, blue, green, alpha = red[1], red[2], red[3], red[4]
     end
     table.insert(terminal.stdin, {type="cursor_color", red=red, blue=blue, green=green, alpha=(alpha or 1)})
+end
+
+local function terminal_set_cursor_backcolor(terminal, red, blue, green, alpha)
+    -- Argument processing
+    if type(red) == "table" and blue == nil then
+        red, blue, green, alpha = red[1], red[2], red[3], red[4]
+    end
+    table.insert(terminal.stdin, {type="cursor_backcolor", red=red, blue=blue, green=green, alpha=(alpha or 1)})
 end
 
 
@@ -121,6 +133,7 @@ local function terminal_update(terminal, dt)
             local x,y,w,h = char_or_command.x or 1, char_or_command.y or 1, char_or_command.w or terminal.width, char_or_command.h or terminal.h
             for y=y,y+h-1 do
                 for x=x,x+w-1 do
+                    terminal_update_character(terminal, x, y, " ")
                     terminal.buffer[y][x] = " "
                 end
             end
@@ -134,6 +147,11 @@ local function terminal_update(terminal, dt)
             terminal.cursor_color[2] = char_or_command.blue
             terminal.cursor_color[3] = char_or_command.green
             terminal.cursor_color[4] = char_or_command.alpha
+        elseif char_or_command.type == "cursor_backcolor" then
+            terminal.cursor_backcolor[1] =  char_or_command.red
+            terminal.cursor_backcolor[2] = char_or_command.blue
+            terminal.cursor_backcolor[3] = char_or_command.green
+            terminal.cursor_backcolor[4] = char_or_command.alpha
         elseif char_or_command.type == "move" then
             terminal.cursor_x = char_or_command.x
             terminal.cursor_y = char_or_command.y
@@ -202,22 +220,31 @@ local function terminal_draw(terminal)
         love.graphics.origin()
 
         love.graphics.setCanvas(terminal.canvas)
-        love.graphics.clear(unpack(terminal.clear_color))
+        -- love.graphics.clear(unpack(terminal.clear_color))
         love.graphics.setFont(terminal.font)
         local font_height = terminal.font:getHeight()
         for y,row in ipairs(terminal.buffer) do
             for x,char in ipairs(row) do
                 local state = terminal.state_buffer[y][x]
-                local left, top = (x-1)*char_width, (y-1)*char_height
-                if state.reversed then 
-                    love.graphics.setColor(unpack(state.color))
-                    -- TODO : find out why I need to offset the rectangle on x14y24 when reducing the font height.
+                if state.dirty then
+                    local left, top = (x-1)*char_width, (y-1)*char_height
+                    -- Character background
+                    if state.reversed then 
+                        love.graphics.setColor(unpack(state.color))
+                    else
+                        love.graphics.setColor(unpack(state.backcolor))
+                    end
                     love.graphics.rectangle("fill", left, top + (font_height - char_height), terminal.char_width, terminal.char_height)
-                    love.graphics.setColor(unpack(terminal.clear_color))
-                else
-                    love.graphics.setColor(unpack(state.color))
+                    
+                    -- Character
+                    if state.reversed then 
+                        love.graphics.setColor(unpack(state.backcolor))
+                    else
+                        love.graphics.setColor(unpack(state.color))
+                    end
+                    love.graphics.print(char, left, top)
+                    state.dirty = false
                 end
-                love.graphics.print(char, left, top)
             end
         end
         terminal.dirty = false
@@ -287,6 +314,7 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
         saved_cursor_x = 1,
         saved_cursor_y = 1,
         cursor_color = {1,1,1,1},
+        cursor_backcolor = {0,0,0,1},
         cursor_reversed = false,
 
         dirty = false,
@@ -311,7 +339,9 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
         for j=1,num_columns do
             row[j] = ' '
             state_row[j] = {
-                color = {1,1,1,1}
+                color = {1,1,1,1},
+                backcolor = {0,0,0,1},
+                dirty = true
             }
         end
         instance.buffer[i] = row
@@ -330,6 +360,7 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
     instance.show_cursor = terminal_show_cursor
     instance.reverse_cursor = terminal_reverse
     instance.set_cursor_color = terminal_set_cursor_color
+    instance.set_cursor_backcolor = terminal_set_cursor_backcolor
 
     instance.frame = terminal_frame
 
