@@ -22,13 +22,14 @@ term:set_cursor_color(Terminal.schemes.basic[4])
 term:frame("line", 1,1,80,25)
 
 term:set_cursor_color(Terminal.schemes.basic[3])
-term:print(3,2,[[ ___      __   __         ____   _______  _______ ]])
-term:print(3,3,[[|   |    |  | |  |       |    | |  _    ||  _    |]])
-term:print(3,4,[[|   |    |  |_|  | ____   |   | | | |   || | |   |]])
-term:print(3,5,[[|   |    |       ||____|  |   | | | |   || | |   |]])
-term:print(3,6,[[|   |___ |       |        |   | | |_|   || |_|   |]])
-term:print(3,7,[[|       | |     |         |   | |       ||       |]])
-term:print(3,8,[[|_______|  |___|          |___| |_______||_______|]])
+term:blit(3,2,
+[[ ___      __   __         ____   _______  _______ 
+|   |    |  | |  |       |    | |  _    ||  _    |
+|   |    |  |_|  | ____   |   | | | |   || | |   |
+|   |    |       ||____|  |   | | | |   || | |   |
+|   |___ |       |        |   | | |_|   || |_|   |
+|       | |     |         |   | |       ||       |
+|_______|  |___|          |___| |_______||_______|]])
 
 term:set_cursor_color(Terminal.schemes.basic[7])
 term:print(55, 8, "By Eiyeron")
