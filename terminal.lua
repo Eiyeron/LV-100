@@ -229,15 +229,15 @@ local function terminal_draw(terminal)
                 if state.dirty then
                     local left, top = (x-1)*char_width, (y-1)*char_height
                     -- Character background
-                    if state.reversed then 
+                    if state.reversed then
                         love.graphics.setColor(unpack(state.color))
                     else
                         love.graphics.setColor(unpack(state.backcolor))
                     end
                     love.graphics.rectangle("fill", left, top + (font_height - char_height), terminal.char_width, terminal.char_height)
-                    
+
                     -- Character
-                    if state.reversed then 
+                    if state.reversed then
                         love.graphics.setColor(unpack(state.backcolor))
                     else
                         love.graphics.setColor(unpack(state.color))
@@ -363,6 +363,11 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
     instance.set_cursor_backcolor = terminal_set_cursor_backcolor
 
     instance.frame = terminal_frame
+
+    local previous_canvas = love.graphics.getCanvas()
+    love.graphics.setCanvas(instance.canvas)
+    love.graphics.clear(instance.clear_color)
+    love.graphics.setCanvas(previous_canvas)
 
     return instance
 end
