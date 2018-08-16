@@ -68,59 +68,15 @@ term:print(4, 22, "Shaders courtesy of the Moonshine library.")
 term:print(4, 23, "x14y24HeadUpDaisy font by @hicchicc.")
 
 
-local glitch = [[ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒƓ΄΅Ά·ΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϏϐϑϒϓϔϕϖϗϘϙϚϛϜϝЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџ           ​‐‑‒–—―‖‗‘’‚‛“”„‟†‡•‣․‥…‧ ‰‱′″‴‵‶‷‸‹›※‼‽‾‿⁀⁄⁇⁈⁉ €₽₿℃℉ℓ№℠℡™ΩÅⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹⅺⅻ←↑→↓↔↕↖↗↘↙⇐⇑⇒⇓⇔⇕⇖⇗⇘⇙∀∂∃∅∆∇∈∋∑−∗∘∙√∝∞∟∠∥∧∨∩∪∫∬∮∴∵∽≒≠≡≦≧≪≫⊂⊃⊆⊇⊥⊿⌒①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳─━│┃┌┏┐┓└┗┘┛├┝┠┣┤┥┨┫┬┯┰┳┴┷┸┻┼┿╂╋▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐■□▲△▼▽◆◇○◎●◯☀☁☂☃★☆☐☑☒☓☕☚☛☜☝☞☟☠♀♂♔♕♖♗♘♙♚♛♜♝♞♟♠♡♢♣♤♥♦♧♩♪♫♬♭♮♯　、。〇〈〉《》「」『』【】〒〓〔〕〜〝〞〟〼ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんゔゕゖ゙゚゛゜ゝゞ゠ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶヷヸヹヺ・ーヽヾ！＂＃＄％＆＇（）＊＋，－．／０１２３４５６７８９：；＜＝＞？＠ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ［＼］＾＿｀ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ｛｜｝～￠￡￢￣￤￥]]
-
-local function utf8_sub(s,i,j)
-    i=utf8.offset(s,i)
-    j=utf8.offset(s,j+1)-1
-    return string.sub(s,i,j)
-end
-
-
-local acc = 0
 local index = 1
-
-local item_y = 0
 
 local glitch_on = false
 
-local canvas = love.graphics.newCanvas(800*4, 600*4)
 function love.keypressed(key)
-    local previous_y = item_y
-    if key == "up" and item_y > 0 then
-        item_y = item_y - 1
-    elseif key == "down" and item_y < 3 then
-        item_y = item_y + 1
-    end
-    if key == "space" then
-        glitch_on =  not glitch_on
-        print(space)
-    end
 end
 
 function love.update(dt)
     term:update(dt)
-    acc = acc + dt
-    if acc > .25 then
-        index = (index%4) + 1
-        acc = acc - .25
-    end
-
-    if glitch_on then
-        local buffer = term.buffer
-        local state_buffer = term.state_buffer
-        local len = utf8.len(glitch)
-        for y=1, term.height do
-            for x=1, term.width do
-                local index = math.floor(math.random(1, len))
-                if buffer[y][x] ~= " " then
-                    buffer[y][x] = utf8_sub(glitch, index, index)
-                    state_buffer[y][x].dirty = true
-                end
-            end
-        end
-        term.dirty = true
-    end
 end
 
 function love.resize(width, height)
