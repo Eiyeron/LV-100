@@ -75,89 +75,29 @@ end
 
 term:set_cursor_color(Terminal.schemes.basic[7])
 
-color_this(3,2,[[█    █     █        ██   ██   ██]])
-color_this(3,3,[[█    █     █       █ █  █  █ █  █]])
-color_this(3,4,[[█     █   █   ███    █  █  █ █  █]])
-color_this(3,5,[[█      █ █           █  █  █ █  █]])
-color_this(3,6,[[█████   █           ███  ██   ██]])
+local logo_pos = {
+    {3,2},
+    {24,8},
+    {45, 2},
+    {3,14},
+    {45,14}
+}
 
-term:blit(3,2,[[
+for _,pos in ipairs(logo_pos) do
+    local x, y = pos[1], pos[2]
+    color_this(x,y+0,[[█    █     █        ██   ██   ██]])
+    color_this(x,y+1,[[█    █     █       █ █  █  █ █  █]])
+    color_this(x,y+2,[[█     █   █   ███    █  █  █ █  █]])
+    color_this(x,y+3,[[█      █ █           █  █  █ █  █]])
+    color_this(x,y+4,[[█████   █           ███  ██   ██]])
+
+    term:blit(x,y,[[
 █    █     █        ██   ██   ██
 █    █     █       █ █  █  █ █  █
 █     █   █   ███    █  █  █ █  █
 █      █ █           █  █  █ █  █
 █████   █           ███  ██   ██
-]])
-
-color_this(24,8,[[█    █     █        ██   ██   ██]])
-color_this(24,9,[[█    █     █       █ █  █  █ █  █]])
-color_this(24,10,[[█     █   █   ███    █  █  █ █  █]])
-color_this(24,11,[[█      █ █           █  █  █ █  █]])
-color_this(24,12,[[█████   █           ███  ██   ██]])
-
-term:blit(24,8,[[
-█    █     █        ██   ██   ██
-█    █     █       █ █  █  █ █  █
-█     █   █   ███    █  █  █ █  █
-█      █ █           █  █  █ █  █
-█████   █           ███  ██   ██
-]])
-
-color_this(45,2,[[█    █     █        ██   ██   ██]])
-color_this(45,3,[[█    █     █       █ █  █  █ █  █]])
-color_this(45,4,[[█     █   █   ███    █  █  █ █  █]])
-color_this(45,5,[[█      █ █           █  █  █ █  █]])
-color_this(45,6,[[█████   █           ███  ██   ██]])
-
-term:blit(45,2,[[
-█    █     █        ██   ██   ██
-█    █     █       █ █  █  █ █  █
-█     █   █   ███    █  █  █ █  █
-█      █ █           █  █  █ █  █
-█████   █           ███  ██   ██
-]])
-
-color_this(3,14,[[█    █     █        ██   ██   ██]])
-color_this(3,15,[[█    █     █       █ █  █  █ █  █]])
-color_this(3,16,[[█     █   █   ███    █  █  █ █  █]])
-color_this(3,17,[[█      █ █           █  █  █ █  █]])
-color_this(3,18,[[█████   █           ███  ██   ██]])
-
-term:blit(3,14,[[
-█    █     █        ██   ██   ██
-█    █     █       █ █  █  █ █  █
-█     █   █   ███    █  █  █ █  █
-█      █ █           █  █  █ █  █
-█████   █           ███  ██   ██
-]])
-
-color_this(45,14,[[█    █     █        ██   ██   ██]])
-color_this(45,15,[[█    █     █       █ █  █  █ █  █]])
-color_this(45,16,[[█     █   █   ███    █  █  █ █  █]])
-color_this(45,17,[[█      █ █           █  █  █ █  █]])
-color_this(45,18,[[█████   █           ███  ██   ██]])
-
-term:blit(45,14,[[
-█    █     █        ██   ██   ██
-█    █     █       █ █  █  █ █  █
-█     █   █   ███    █  █  █ █  █
-█      █ █           █  █  █ █  █
-█████   █           ███  ██   ██
-]])
-
-
-local canvas = love.graphics.newCanvas(800*4, 600*4)
-function love.keypressed(key)
-    local previous_y = item_y
-    if key == "up" and item_y > 0 then
-        item_y = item_y - 1
-    elseif key == "down" and item_y < 3 then
-        item_y = item_y + 1
-    end
-    if key == "space" then
-        glitch_on =  not glitch_on
-        print(space)
-    end
+    ]])
 end
 
 function love.update(dt)
@@ -165,19 +105,7 @@ function love.update(dt)
     term_back:update(dt)
 end
 
-function love.resize(width, height)
-    effect = moonshine(moonshine.effects.scanlines).chain(moonshine.effects.crt).chain(moonshine.effects.glow)
-    effect.scanlines.opacity=0.6
-    effect.glow.min_luma = 0.2
-end
-
 function love.draw()
-    local ww,wh = love.window.getMode()
-    -- local v,w = love.mouse.getX()/ww, love.mouse.getY()/wh
-    local t = love.timer.getTime()
-    local v,w = math.sin(t)/2+.5, -math.cos(t)/2+.5
-    local limit = math.floor(v*19+1)
-    local spacing = w * 0.10
     effect(function()
         love.graphics.setBlendMode( "alpha" )
         do

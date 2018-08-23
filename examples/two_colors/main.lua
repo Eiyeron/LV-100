@@ -7,7 +7,6 @@ effect = moonshine(moonshine.effects.scanlines).chain(moonshine.effects.crt).cha
 effect.scanlines.opacity=0.6
 effect.glow.min_luma = 0.2
 
-
 local font = love.graphics.newFont("x14y24pxHeadUpDaisy.ttf", 24)
 local term = Terminal(14*51, (font:getHeight()-4)*25, font, nil, font:getHeight()-4)
 term:hide_cursor()
@@ -61,6 +60,7 @@ for i,c in utf8.codes(str) do
     term:set_cursor_backcolor(Terminal.schemes.basic[index_bg])
     term:print(ch)
 end
+
 function love.update(dt)
     term:update(dt)
 end

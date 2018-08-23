@@ -1,7 +1,6 @@
 ﻿package.path = package.path .. ";../../?.lua;../../?/init.lua;../libs/?.lua;../libs/?/init.lua" -- Small loading hack, not needed in normal times.
 local Terminal = require "terminal"
 local moonshine = require 'moonshine'
-local utf8 = require "utf8"
 
 effect = moonshine(moonshine.effects.scanlines).chain(moonshine.effects.crt).chain(moonshine.effects.glow)
 effect.scanlines.opacity=0.6
@@ -12,7 +11,6 @@ local font = love.graphics.newFont("x14y24pxHeadUpDaisy.ttf", 24)
 local term = Terminal(14*80, (font:getHeight()-4)*25, font, nil, font:getHeight()-4)
 
 -- Tweaking a bit the colors and canvas to get the transparent effect
-Terminal.schemes.basic[0][4] = 0
 term.clear_color = {0,0,0,0}
 local previous_canvas = love.graphics.getCanvas()
 love.graphics.setCanvas(term.canvas)
@@ -24,7 +22,7 @@ term:hide_cursor()
 term:set_cursor_color(Terminal.schemes.basic[7])
 term:frame("line", 1,1,80,25)
 term:reverse_cursor()
-term:print(66, 1, "Oranges!")
+term:print(68, 1, "Layering")
 term:set_cursor_color(Terminal.schemes.basic[7])
 term:print(77, 1, "−☐")
 term:set_cursor_color(Terminal.schemes.basic[1])
@@ -67,22 +65,8 @@ term:reverse_cursor()
 term:print(4, 22, "Shaders courtesy of the Moonshine library.")
 term:print(4, 23, "x14y24HeadUpDaisy font by @hicchicc.")
 
-
-local index = 1
-
-local glitch_on = false
-
-function love.keypressed(key)
-end
-
 function love.update(dt)
     term:update(dt)
-end
-
-function love.resize(width, height)
-    effect = moonshine(moonshine.effects.scanlines).chain(moonshine.effects.crt).chain(moonshine.effects.glow)
-    effect.scanlines.opacity=0.6
-    effect.glow.min_luma = 0.2
 end
 
 function love.draw()
