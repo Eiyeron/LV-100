@@ -1,6 +1,5 @@
 -- LV-100
 
--- TODO : add licence
 -- TODO : rethink character coloring to simplify stuff
 
 local utf8 = require("utf8")
@@ -17,7 +16,7 @@ local basic_scheme = {
     {1,1,1,1}
 }
 
--- TODO : properly quote the creator of this snippet
+-- Origin of this snippet : https://stackoverflow.com/a/43139063
 local function utf8_sub(s,i,j)
     i=utf8.offset(s,i)
     j=utf8.offset(s,j+1)-1
@@ -373,6 +372,32 @@ local function terminal (self, width, height, font, custom_char_width, custom_ch
 end
 
 local module = {
+    _VERSION = 'lv-100 v0.0.1',
+    _DESCRIPTION = "A simple terminal-like emulator for Love2D",
+    _URL = "https://github.com/Eiyeron/LV-100",
+    _LICENCE = [[
+MIT License
+
+Copyright (c) 2018 Florian Dormont
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+]],
     terminal = terminal,
     schemes = {
         basic = basic_scheme
